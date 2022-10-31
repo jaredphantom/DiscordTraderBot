@@ -1,0 +1,8 @@
+python-binance
+python-dotenv
+numpy
+websocket-client
+matplotlib
+discord.py==1.7.3
+tradingview_ta
+wexpect
