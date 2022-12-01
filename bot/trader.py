@@ -16,7 +16,7 @@ numPositions = 0
 losses = 0
 numTrades = 0
 totalWins = 0
-totalChange = 1
+totalChange = 0
 fees = 0.0015
 webhook = Webhook.from_url(
     "", 
@@ -67,6 +67,7 @@ class Trader:
         self._changes = []
         self._wait = True
         self._strat = None
+        self._pnl = 1
 
     #websocket functions
     def socketOpen(self, ws):
@@ -239,7 +240,9 @@ class Trader:
             if self._buyPrice != 0:
                 self._change = ((float(order['fills'][0]['price']) - self._buyPrice) / self._buyPrice) + 1 - fees
                 self._changes.append(round((self._change - 1) * 100, 2))
-                totalChange = totalChange * self._change
+                totalChange -= ((self._pnl - 1) * 100)
+                self._pnl *= self._change
+                totalChange += ((self._pnl - 1) * 100)
                 webhook.send(
                     f"Sell {self._ticker[:-4].upper()} @ ${order['fills'][0]['price']}: {round((self._change - 1) * 100, 4)}% P/L")
                 webhook.send(
@@ -364,7 +367,7 @@ class Trader:
         print(f"Total trades: {numTrades}")
         if numTrades > 0:
             print(f"Win rate: {round((totalWins / numTrades) * 100, 2)}%")
-            print(f"Overall P/L: {round(((totalChange - 1) * 100) / len(self._coins) * self._slippage**len(self._coins), 4)}%")
+            print(f"Overall P/L: {round(totalChange / len(self._coins) * self._slippage**len(self._coins), 4)}%")
         print("----------------------------------------------------------------")
 
     #send trading session summary to discord via webhook
@@ -372,7 +375,7 @@ class Trader:
         if numTrades > 0:
             webhook.send(f"Total trades: {numTrades}"
                         +f"\nWin rate: {round((totalWins / numTrades) * 100, 2)}%"
-                        +f"\nOverall P/L: {round(((totalChange - 1) * 100) / len(self._coins) * self._slippage**len(self._coins), 4)}%")
+                        +f"\nOverall P/L: {round(totalChange / len(self._coins) * self._slippage**len(self._coins), 4)}%")
         else:
             webhook.send(f"Total trades: {numTrades}")
 
